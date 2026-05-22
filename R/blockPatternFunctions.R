@@ -10,13 +10,19 @@
 #'   Default is 10000 bp.
 #' @param maxBlockSize The maximum size of the prophage-like block pattern.
 #'   Default is NA.
+#' @param search Search method to use. Either "grid" for the original grid
+#'   search or "direct" for DIRECT global optimization.
 #' @return List containing three objects
 #' @keywords internal
 blockBuilder <-
   function(viralSubset,
            windowSize,
            minBlockSize,
-           maxBlockSize) {
+           maxBlockSize,
+           search = "grid") {
+    if (length(search) != 1 || !search %in% c("grid", "direct")) {
+      stop('search must be "grid" or "direct"', call. = FALSE)
+    }
     if (nrow(viralSubset)-5000/windowSize < minBlockSize/windowSize) { 
         bestMatchInfoLeft <-
             list(
@@ -84,78 +90,230 @@ blockBuilder <-
         minReadCov,
         startingCovs[1]
       )[[1]]
-    for (i in seq_along(startingCovs)) {
-      cov <- startingCovs[[i]]
-      patternFull <- makeBlockPattern(
+    if (search == "direct") {
+      return(directBlockBuilder(
         viralSubset,
         windowSize,
-        "Full",
+        minBlockSize,
+        blockLength,
         blockLengthFull,
-        nonBlockFull,
         minReadCov,
-        cov
-      )[[2]]
-      patternRight <-
-        makeBlockPattern(
+        maxReadCov,
+        startingCovs
+      ))
+    } else if (search == "grid") {
+      for (i in seq_along(startingCovs)) {
+        cov <- startingCovs[[i]]
+        patternFull <- makeBlockPattern(
           viralSubset,
           windowSize,
-          "Right",
+          "Full",
+          blockLengthFull,
+          nonBlockFull,
+          minReadCov,
+          cov
+        )[[2]]
+        patternRight <-
+          makeBlockPattern(
+            viralSubset,
+            windowSize,
+            "Right",
+            blockLength,
+            nonBlock,
+            minReadCov,
+            cov
+          )[[2]]
+        patternLeft <- makeBlockPattern(
+          viralSubset,
+          windowSize,
+          "Left",
           blockLength,
           nonBlock,
           minReadCov,
           cov
         )[[2]]
-      patternLeft <- makeBlockPattern(
-        viralSubset,
-        windowSize,
-        "Left",
-        blockLength,
-        nonBlock,
-        minReadCov,
-        cov
-      )[[2]]
-      bestMatchInfoLeft <-
-        leftRightBlockTranslater(
-          viralSubset,
-          patternLeft,
-          "Left",
-          windowSize,
-          minReadCov,
-          cov,
-          bestMatchInfoLeft,
-          minBlockSize
-        )
-      bestMatchInfoRight <-
-        leftRightBlockTranslater(
-          viralSubset,
-          patternRight,
-          "Right",
-          windowSize,
-          minReadCov,
-          cov,
-          bestMatchInfoRight,
-          minBlockSize
-        )
-      repeat {
-        bestMatchInfoFull <-
-          blockTranslator(
-            viralSubset, bestMatchInfoFull,
-            windowSize, patternFull
+        bestMatchInfoLeft <-
+          leftRightBlockTranslater(
+            viralSubset,
+            patternLeft,
+            "Left",
+            windowSize,
+            minReadCov,
+            cov,
+            bestMatchInfoLeft,
+            minBlockSize
           )
-        middleRows <- which(patternFull == cov)
-        if (length(middleRows) < (minBlockSize / windowSize) + 1) {
-          break
+        bestMatchInfoRight <-
+          leftRightBlockTranslater(
+            viralSubset,
+            patternRight,
+            "Right",
+            windowSize,
+            minReadCov,
+            cov,
+            bestMatchInfoRight,
+            minBlockSize
+          )
+        repeat {
+          bestMatchInfoFull <-
+            blockTranslator(
+              viralSubset, bestMatchInfoFull,
+              windowSize, patternFull
+            )
+          middleRows <- which(patternFull == cov)
+          if (length(middleRows) < (minBlockSize / windowSize) + 1) {
+            break
+          }
+          patternFull <- c(
+            patternFull[-c(middleRows[2]:
+            middleRows[(1000 / windowSize) + 1])],
+            rep(minReadCov, 1000 / windowSize)
+          )
         }
-        patternFull <- c(
-          patternFull[-c(middleRows[2]:
-          middleRows[(1000 / windowSize) + 1])],
-          rep(minReadCov, 1000 / windowSize)
-        )
       }
     }
     }
     return(list(bestMatchInfoLeft, bestMatchInfoRight, bestMatchInfoFull))
   }
+
+#' DIRECT block pattern optimizer
+#'
+#' Optimizes prophage-like block patterns using DIRECT global optimization.
+#'
+#' @param viralSubset A subset of the read coverage pileup that pertains only to
+#'   the contig currently being assessed
+#' @param windowSize The window size used to re-average read coverage pileups
+#' @param minBlockSize The minimum size of the prophage-like block pattern.
+#' @param blockLength Maximum left and right block pattern length
+#' @param blockLengthFull Maximum full block pattern length
+#' @param minReadCov Baseline value outside of the block
+#' @param maxReadCov Maximum VLP-fraction read coverage value
+#' @param startingCovs Candidate coverage values used to initialize the search
+#' @return List containing three objects
+#' @keywords internal
+directBlockBuilder <- function(viralSubset,
+                               windowSize,
+                               minBlockSize,
+                               blockLength,
+                               blockLengthFull,
+                               minReadCov,
+                               maxReadCov,
+                               startingCovs) {
+  if (!requireNamespace("nloptr", quietly = TRUE)) {
+    stop('search = "direct" requires the nloptr package',
+         call. = FALSE)
+  }
+  minBlockRows <- minBlockSize / windowSize
+  sideBuffer <- 5000 / windowSize
+  contigCoverage <- viralSubset[, 2]
+  nRows <- nrow(viralSubset)
+
+  # Convert the optimized block width to a valid integer row count.
+  boundedRows <- function(rows, maxRows) {
+    round(min(max(rows, minBlockRows), maxRows))
+  }
+
+  # Convert a 0-1 position parameter to a valid full-block start row.
+  fullStartFromFraction <- function(blockRows, startFraction) {
+    maxStart <- nRows - sideBuffer - blockRows + 1
+    round((sideBuffer + 1) + startFraction * (maxStart - (sideBuffer + 1)))
+  }
+
+  # Objective function minimized by DIRECT. It converts the candidate
+  # parameters into a block pattern and returns one match score.
+  blockObjective <- function(fullLeftRight, par) {
+    cov <- par[[1]]
+    if (fullLeftRight == "Full") {
+      blockRows <- boundedRows(par[[2]], blockLengthFull)
+      startPos <- fullStartFromFraction(blockRows, par[[3]])
+      endPos <- startPos + blockRows - 1
+    } else if (fullLeftRight == "Left") {
+      blockRows <- boundedRows(par[[2]], blockLength)
+      startPos <- 1
+      endPos <- blockRows
+    } else {
+      blockRows <- boundedRows(par[[2]], blockLength)
+      startPos <- nRows - blockRows + 1
+      endPos <- nRows
+    }
+    pattern <-
+      c(
+        rep(minReadCov, startPos - 1),
+        rep(cov, blockRows),
+        rep(minReadCov, nRows - endPos)
+      )
+    diff <- mean(abs(contigCoverage - pattern))
+    return(diff)
+  }
+
+  makeBestMatchInfo <- function(fullLeftRight, par) {
+    cov <- par[[1]]
+    if (fullLeftRight == "Full") {
+      blockRows <- boundedRows(par[[2]], blockLengthFull)
+      startPos <- fullStartFromFraction(blockRows, par[[3]])
+      endPos <- startPos + blockRows - 1
+    } else if (fullLeftRight == "Left") {
+      blockRows <- boundedRows(par[[2]], blockLength)
+      startPos <- 1
+      endPos <- blockRows
+    } else {
+      blockRows <- boundedRows(par[[2]], blockLength)
+      startPos <- nRows - blockRows + 1
+      endPos <- nRows
+    }
+    list(
+      blockObjective(fullLeftRight, par),
+      minReadCov,
+      cov,
+      "NA",
+      startPos,
+      endPos,
+      "Prophage-like"
+    )
+  }
+
+  runDirectLSearch <- function(fullLeftRight, initial, lower, upper) {
+    objective <- function(par) blockObjective(fullLeftRight, par)
+    optResult <-
+      nloptr::nloptr(
+        x0 = initial,
+        eval_f = objective,
+        lb = lower,
+        ub = upper,
+        opts = list(
+          algorithm = "NLOPT_GN_DIRECT_L",
+          maxeval = 1000
+        )
+      )
+    optResult$solution
+  }
+
+  leftOpt <-
+    runDirectLSearch(
+      "Left",
+      c(startingCovs[1], blockLength),
+      c(startingCovs[1], minBlockRows),
+      c(maxReadCov, blockLength)
+    )
+  rightOpt <-
+    runDirectLSearch(
+      "Right",
+      c(startingCovs[1], blockLength),
+      c(startingCovs[1], minBlockRows),
+      c(maxReadCov, blockLength)
+    )
+  fullOpt <-
+    runDirectLSearch(
+      "Full",
+      c(startingCovs[1], blockLengthFull, 0),
+      c(startingCovs[1], minBlockRows, 0),
+      c(maxReadCov, blockLengthFull, 1)
+    )
+  bestMatchInfoLeft <- makeBestMatchInfo("Left", leftOpt)
+  bestMatchInfoRight <- makeBestMatchInfo("Right", rightOpt)
+  bestMatchInfoFull <- makeBestMatchInfo("Full", fullOpt)
+  return(list(bestMatchInfoLeft, bestMatchInfoRight, bestMatchInfoFull))
+}
 
 #' Make block patterns for pattern-matching
 #'
