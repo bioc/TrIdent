@@ -515,7 +515,8 @@ and creation of pileup.
 and creation of pileup. 
 * `verbose`: TRUE or FALSE. Print progress messages to console. Default is TRUE.
 * `searchMethod`: Search method to use during pattern-matching. Either "grid" 
-for the original grid search or "direct" for DIRECT global optimization.
+for the original grid search or "direct" for DIRECT global optimization. 
+Default is "grid".
 * `DirectMaxEval`: Maximum number of DIRECT evaluations to make. Default is 100.
 * `SaveFilesTo`: Optional, Provide a path to the directory you wish to save 
 output to. A folder will be made within the provided directory to store 
