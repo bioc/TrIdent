@@ -23,6 +23,9 @@
 #' @param minSlope The minimum slope value to test for sloping patterns
 #' @param minSlopeSize The minimum width of sloping patterns. 
 #' @param verbose TRUE or FALSE. Print progress messages to console. Default is TRUE.
+#' @param searchMethod Search method to use. Either "grid" for the original grid
+#'   search or "direct" for DIRECT global optimization.
+#' @param DirectMaxEval Maximum number of DIRECT evaluations to make.
 #' @return List containing three objects.
 #' @keywords internal
 patternMatcher <-
@@ -34,7 +37,9 @@ patternMatcher <-
            minContigLength,
            minSlope,
            minSlopeSize,
-           verbose) {
+           verbose,
+           searchMethod,
+           DirectMaxEval) {
     contigNames <- unique(VLPpileup[, 1])
     bestMatchList <- list()
     filteredOutContigs <- rep(NA, length(contigNames))
@@ -79,19 +84,23 @@ patternMatcher <-
           viralSubset,
           windowSize,
           minBlockSize,
-          maxBlockSize
+          maxBlockSize,
+          searchMethod,
+          DirectMaxEval
         )
       }
       if (length(unique(viralSubset[, 2])) == 1) {
-        bestMatchSumm <- list(noPattern(viralSubset))
+        bestMatchSumm <- list(noPattern(viralSubset, searchMethod, DirectMaxEval))
         bestMatchScoreSumm <-
           c(bestMatchSumm[[1]][[1]]) %>% as.numeric()
       } else {
-        slopeList <- slopeWithStart(viralSubset, windowSize, minSlope, minSlopeSize)
+        slopeList <- slopeWithStart(viralSubset, windowSize, minSlope, 
+                                    minSlopeSize, searchMethod, DirectMaxEval)
         slopeListNoStart <-
-          fullSlope(viralSubset, windowSize, minSlope, minSlopeSize)
+          fullSlope(viralSubset, windowSize, minSlope, 
+                    minSlopeSize, searchMethod, DirectMaxEval)
         bestMatchSumm <- list(
-          noPattern(viralSubset),
+          noPattern(viralSubset, searchMethod, DirectMaxEval),
           blocksList[[1]],
           blocksList[[2]],
           blocksList[[3]],

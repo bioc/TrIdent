@@ -51,6 +51,10 @@
 #'   output to. A folder will be made within the provided directory to store
 #'   results.
 #' @param verbose TRUE or FALSE. Print progress messages to console. Default is TRUE.
+#' @param searchMethod Search method to use. Either "grid" for the original grid
+#'   search or "direct" for DIRECT global optimization.
+#' @param DirectMaxEval Maximum number of DIRECT evaluations to make. Default is 100.
+#'  Default is 100.
 #' @importFrom utils capture.output
 #' @return Large list containing 5 objects
 #' @export
@@ -74,6 +78,8 @@ TrIdentClassifier <- function(VLPpileup,
                               VLPReads,
                               WCReads,
                               verbose = TRUE,
+                              searchMethod= "grid",
+                              DirectMaxEval = 100,
                               SaveFilesTo) {
   ## error catching
   if (!(windowSize %in% list(100, 200, 500, 1000))) {
@@ -90,6 +96,9 @@ TrIdentClassifier <- function(VLPpileup,
   }
   if (minSlopeSize < 20000) {
         stop("minSlopeSize cannot be less than 20000 bp!")
+  }
+  if (!searchMethod %in% c("grid", "direct")) {
+        stop('searchMethod must be "grid" or "direct"')
     }
   ## input validation
   if (nrow(VLPpileup) != nrow(WCpileup)) {
@@ -124,7 +133,9 @@ TrIdentClassifier <- function(VLPpileup,
       minContigLength,
       minSlope,
       minSlopeSize,
-      verbose
+      verbose,
+      searchMethod,
+      DirectMaxEval
     )
   VLPReads <- ifelse(missing(VLPReads), 1, VLPReads)
   WCReads <- ifelse(missing(WCReads), 1, WCReads)

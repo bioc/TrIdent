@@ -13,7 +13,9 @@ patternMatcher(
   minContigLength,
   minSlope,
   minSlopeSize,
-  verbose
+  verbose,
+  searchMethod,
+  DirectMaxEval
 )
 }
 \arguments{
@@ -41,6 +43,11 @@ pattern-matching on. Must be at least 20,000 bp. Default is 30,000 bp.}
 \item{minSlopeSize}{The minimum width of sloping patterns.}
 
 \item{verbose}{TRUE or FALSE. Print progress messages to console. Default is TRUE.}
+
+\item{searchMethod}{Search method to use. Either "grid" for the original grid
+search or "direct" for DIRECT global optimization.}
+
+\item{DirectMaxEval}{Maximum number of DIRECT evaluations to make.}
 }
 \value{
 List containing three objects.

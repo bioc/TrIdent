@@ -9,13 +9,17 @@
 #' @param windowSize The window size used to re-average read coverage pileup
 #' @param minSlope The minimum slope value to test for sloping patterns
 #' @param minSlopeSize The minimum width of sloping patterns. 
+#' @param searchMethod Search method to use. Either "grid" for the original grid
+#'   search or "direct" for DIRECT global optimization.
+#' @param DirectMaxEval Maximum number of DIRECT evaluations to make.
 #' @return List containing two objects
 #' @keywords internal
-fullSlope <- function(viralSubset, windowSize, minSlope, minSlopeSize) {
+fullSlope <- function(viralSubset, windowSize, minSlope, 
+                      minSlopeSize, searchMethod, DirectMaxEval) {
     if (nrow(viralSubset) < minSlopeSize/windowSize) {
         bestMatchInfoLR <-
             list(
-                diff,
+                Inf,
                 NA,
                 nrow(viralSubset),
                 "NA",
@@ -24,7 +28,20 @@ fullSlope <- function(viralSubset, windowSize, minSlope, minSlopeSize) {
                 "NoPattern"
             )
         bestMatchInfoRL <- bestMatchInfoLR
-    } else {
+    } else if (searchMethod == "direct"){
+        bestMatchInfoLR <- optimSlopeFull(
+            minSlope,
+            viralSubset,
+            windowSize, 
+            "Left",
+            DirectMaxEval)
+        bestMatchInfoRL <- optimSlopeFull(
+            minSlope,
+            viralSubset,
+            windowSize, 
+            "Right",
+            DirectMaxEval)
+    }else if (searchMethod=="grid"){
   maxReadCov <- max(viralSubset[, 2])
   minReadCov <- min(viralSubset[, 2])
   halfReadCov <- abs(maxReadCov - minReadCov) / 2
@@ -119,6 +136,8 @@ makeFullSlopes <-
     ))
   }
 
+
+
 #' Change slope of sloping pattern
 #'
 #' Change the value of the slope used for the sloping pattern-match
@@ -161,3 +180,101 @@ changeSlope <-
       "Sloping"
     ))
   }
+
+
+#' Function for applying DIRECT global optimization algorithm
+#'
+#' Set upper and lower limits for DIRECT and apply it to slope top and bottom
+#'
+#' @param leftOrRight Generate pattern for negative slope (left to right, i.e.
+#'   'Left') or positive slope (right to left, i.e. 'Right')
+#' @param viralSubset A subset of the read coverage pileup that pertains only to
+#'   the contig currently being assessed
+#' @param windowSize The window size used to re-average read coverage pileup
+#' @param minSlope The minimum slope value to test for sloping patterns
+#' @param DirectMaxEval Maximum number of DIRECT evaluations to make.
+#' @return List
+#' @keywords internal
+optimSlopeFull <- function(minSlope, viralSubset, windowSize, leftOrRight, DirectMaxEval){
+    maxReadCov <- max(viralSubset[, 2])
+    minReadCov <- min(viralSubset[, 2])
+    halfReadCov <- minReadCov + (abs(maxReadCov - minReadCov) / 2)
+    slopeTopMax <- maxReadCov + ((abs(maxReadCov - (minReadCov + halfReadCov)) / 10))
+    slopeTopMin <- ((minSlope*windowSize)*((nrow(viralSubset) - 1)))+halfReadCov
+    slopeBottomMin <- minReadCov
+    upper <- c(slopeTopMax, slopeTopMin)
+    lower <- c(halfReadCov, slopeBottomMin)
+    wrapper <- function(dims){
+        return(makeFullSlopesDirect(
+            leftOrRight, 
+            viralSubset, 
+            dims, 
+            windowSize,
+            minSlope)[[1]])
+    }
+    optim <- nloptr::directL(wrapper, lower, upper, control = list(xtol_rel = 1e-4, maxeval = DirectMaxEval))
+    bestmatch <- makeFullSlopesDirect(
+        leftOrRight, 
+        viralSubset, 
+        optim$par, 
+        windowSize,
+        minSlope)
+    return(bestmatch)
+}
+
+
+
+#' Make full slope patterns 
+#'
+#' Makes slope patterns sloping either left to right (Left) or right to left
+#' (right) across the contig being assessed using DIRECT dimensions
+#'
+#' @param leftOrRight Generate pattern for negative slope (left to right, i.e.
+#'   'Left') or positive slope (right to left, i.e. 'Right')
+#' @param viralSubset A subset of the read coverage pileup that pertains only to
+#'   the contig currently being assessed
+#' @param dims Slope top and bottom values
+#' @param windowSize The window size used to re-average read coverage pileups
+#' @param minSlope The minimum slope value to test for sloping patterns
+#' @return List
+#' @keywords internal
+makeFullSlopesDirect <-
+    function(leftOrRight,
+             viralSubset,
+             dims, 
+             windowSize,
+             minSlope) {
+        bestMatchInfo <-
+            list(
+                Inf,
+                NA,
+                nrow(viralSubset),
+                "NA",
+                1,
+                nrow(viralSubset),
+                "NoPattern"
+            ) 
+            top <- ifelse(leftOrRight=="Left",dims[1], dims[2])
+            bottom <- ifelse(leftOrRight=="Left",dims[2], dims[1])
+            covSteps <- (top - bottom) / ((nrow(viralSubset) - 1))
+            if(leftOrRight == "Left" & covSteps<0 | abs(covSteps)/windowSize<minSlope){
+                return(bestMatchInfo)  
+            } else if (leftOrRight == "Right" & covSteps>0 | abs(covSteps)/windowSize<minSlope){
+                return(bestMatchInfo)  
+            } else {
+        contigCoverage <- viralSubset[, 2]
+        covSteps <- abs(top - bottom) / ((nrow(viralSubset) - 1))
+        covSteps <- ifelse(leftOrRight == "Left", -covSteps, covSteps)
+        pattern <- seq(top, bottom, covSteps)
+        diff <- mean(abs(contigCoverage - pattern))
+        return(list(
+            diff,
+            min(pattern),
+            max(pattern),
+            covSteps,
+            1,
+            length(pattern),
+            "Sloping"
+        ))
+            }
+    }

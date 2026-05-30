@@ -17,6 +17,8 @@ TrIdentClassifier(
   VLPReads,
   WCReads,
   verbose = TRUE,
+  searchMethod = "grid",
+  DirectMaxEval = 100,
   SaveFilesTo
 )
 }
@@ -70,6 +72,12 @@ and creation of pileup.}
 creation of pileup.}
 
 \item{verbose}{TRUE or FALSE. Print progress messages to console. Default is TRUE.}
+
+\item{searchMethod}{Search method to use. Either "grid" for the original grid
+search or "direct" for DIRECT global optimization.}
+
+\item{DirectMaxEval}{Maximum number of DIRECT evaluations to make. Default is 100.
+Default is 100.}
 
 \item{SaveFilesTo}{Optional, Provide a path to the directory you wish to save
 output to. A folder will be made within the provided directory to store

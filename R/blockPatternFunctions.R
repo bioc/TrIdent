@@ -10,8 +10,10 @@
 #'   Default is 10000 bp.
 #' @param maxBlockSize The maximum size of the prophage-like block pattern.
 #'   Default is NA.
-#' @param search Search method to use. Either "grid" for the original grid
+#' @param searchMethod Search method to use. Either "grid" for the original grid
 #'   search or "direct" for DIRECT global optimization.
+#' @param DirectMaxEval Maximum number of DIRECT evaluations to make.
+#'  Default is 100.
 #' @return List containing three objects
 #' @keywords internal
 blockBuilder <-
@@ -19,14 +21,12 @@ blockBuilder <-
            windowSize,
            minBlockSize,
            maxBlockSize,
-           search = "grid") {
-    if (length(search) != 1 || !search %in% c("grid", "direct")) {
-      stop('search must be "grid" or "direct"', call. = FALSE)
-    }
+           searchMethod,
+           DirectMaxEval) {
     if (nrow(viralSubset)-5000/windowSize < minBlockSize/windowSize) { 
         bestMatchInfoLeft <-
             list(
-                diff,
+                Inf,
                 NA,
                 nrow(viralSubset),
                 "NA",
@@ -90,7 +90,7 @@ blockBuilder <-
         minReadCov,
         startingCovs[1]
       )[[1]]
-    if (search == "direct") {
+    if (searchMethod == "direct") {
       return(directBlockBuilder(
         viralSubset,
         windowSize,
@@ -99,9 +99,10 @@ blockBuilder <-
         blockLengthFull,
         minReadCov,
         maxReadCov,
-        startingCovs
+        startingCovs,
+        DirectMaxEval
       ))
-    } else if (search == "grid") {
+    } else if (searchMethod == "grid") {
       for (i in seq_along(startingCovs)) {
         cov <- startingCovs[[i]]
         patternFull <- makeBlockPattern(
@@ -189,6 +190,7 @@ blockBuilder <-
 #' @param minReadCov Baseline value outside of the block
 #' @param maxReadCov Maximum VLP-fraction read coverage value
 #' @param startingCovs Candidate coverage values used to initialize the search
+#' @param DirectMaxEval Maximum number of DIRECT evaluations to make. Default is 100.
 #' @return List containing three objects
 #' @keywords internal
 directBlockBuilder <- function(viralSubset,
@@ -198,11 +200,8 @@ directBlockBuilder <- function(viralSubset,
                                blockLengthFull,
                                minReadCov,
                                maxReadCov,
-                               startingCovs) {
-  if (!requireNamespace("nloptr", quietly = TRUE)) {
-    stop('search = "direct" requires the nloptr package',
-         call. = FALSE)
-  }
+                               startingCovs,
+                               DirectMaxEval) {
   minBlockRows <- minBlockSize / windowSize
   sideBuffer <- 5000 / windowSize
   contigCoverage <- viralSubset[, 2]
@@ -221,6 +220,7 @@ directBlockBuilder <- function(viralSubset,
 
   # Objective function minimized by DIRECT. It converts the candidate
   # parameters into a block pattern and returns one match score.
+  
   blockObjective <- function(fullLeftRight, par) {
     cov <- par[[1]]
     if (fullLeftRight == "Full") {
@@ -272,42 +272,33 @@ directBlockBuilder <- function(viralSubset,
     )
   }
 
-  runDirectLSearch <- function(fullLeftRight, initial, lower, upper) {
+  runDirectLSearch <- function(fullLeftRight, initial, lower, upper, DirectMaxEval) {
     objective <- function(par) blockObjective(fullLeftRight, par)
     optResult <-
-      nloptr::nloptr(
-        x0 = initial,
-        eval_f = objective,
-        lb = lower,
-        ub = upper,
-        opts = list(
-          algorithm = "NLOPT_GN_DIRECT_L",
-          maxeval = 1000
-        )
-      )
-    optResult$solution
+      nloptr::directL(objective, lower, upper, 
+                     control = list(xtol_rel = 1e-4, maxeval = DirectMaxEval))
+    optResult$par
   }
-
   leftOpt <-
     runDirectLSearch(
       "Left",
       c(startingCovs[1], blockLength),
       c(startingCovs[1], minBlockRows),
-      c(maxReadCov, blockLength)
+      c(maxReadCov, blockLength), DirectMaxEval
     )
   rightOpt <-
     runDirectLSearch(
       "Right",
       c(startingCovs[1], blockLength),
       c(startingCovs[1], minBlockRows),
-      c(maxReadCov, blockLength)
+      c(maxReadCov, blockLength), DirectMaxEval
     )
   fullOpt <-
     runDirectLSearch(
       "Full",
       c(startingCovs[1], blockLengthFull, 0),
       c(startingCovs[1], minBlockRows, 0),
-      c(maxReadCov, blockLengthFull, 1)
+      c(maxReadCov, blockLengthFull, 1), DirectMaxEval
     )
   bestMatchInfoLeft <- makeBestMatchInfo("Left", leftOpt)
   bestMatchInfoRight <- makeBestMatchInfo("Right", rightOpt)

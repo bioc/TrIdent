@@ -4,7 +4,14 @@
 \alias{blockBuilder}
 \title{Builds prophage-like block patterns}
 \usage{
-blockBuilder(viralSubset, windowSize, minBlockSize, maxBlockSize, search = "grid")
+blockBuilder(
+  viralSubset,
+  windowSize,
+  minBlockSize,
+  maxBlockSize,
+  searchMethod,
+  DirectMaxEval
+)
 }
 \arguments{
 \item{viralSubset}{A subset of the read coverage pileup that pertains only to
@@ -18,8 +25,11 @@ Default is 10000 bp.}
 \item{maxBlockSize}{The maximum size of the prophage-like block pattern.
 Default is NA.}
 
-\item{search}{Search method to use. Either "grid" for the original grid
+\item{searchMethod}{Search method to use. Either "grid" for the original grid
 search or "direct" for DIRECT global optimization.}
+
+\item{DirectMaxEval}{Maximum number of DIRECT evaluations to make.
+Default is 100.}
 }
 \value{
 List containing three objects

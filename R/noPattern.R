@@ -6,9 +6,15 @@
 #'
 #' @param viralSubset A subset of the read coverage pileup that pertains only to
 #'   the contig currently being assessed
+#' @param searchMethod Search method to use. Either "grid" for the original grid
+#'   search or "direct" for DIRECT global optimization.
+#' @param DirectMaxEval Maximum number of DIRECT evaluations to make.
 #' @return List
 #' @keywords internal
-noPattern <- function(viralSubset) {
+noPattern <- function(viralSubset, searchMethod, DirectMaxEval) {
+    if(searchMethod =="direct"){
+     bestMatchInfo <- optimNoPattern(viralSubset, DirectMaxEval)
+    }else if (searchMethod=="grid"){
   pattern1 <- rep(median(viralSubset[, 2]), nrow(viralSubset))
   pattern2 <- rep(mean(viralSubset[, 2]), nrow(viralSubset))
   diff1 <- mean(abs(viralSubset[, 2] - pattern1))
@@ -27,5 +33,42 @@ noPattern <- function(viralSubset) {
       nrow(viralSubset),
       "NoPattern"
     )
+    }
   return(bestMatchInfo)
 }
+
+
+
+#' Function for applying DIRECT global optimization algorithm
+#'
+#' Set upper and lower limits for DIRECT and apply it to the noPattern pattern
+#'
+#' @param viralSubset A subset of the read coverage pileup that pertains only to
+#'   the contig currently being assessed
+#' @param DirectMaxEval Maximum number of DIRECT evaluations to make.
+#' @return List
+#' @keywords internal
+optimNoPattern <- function(viralSubset, DirectMaxEval){
+    maxReadCov <- max(viralSubset[, 2])
+    minReadCov <- min(viralSubset[, 2])
+    wrapper <- function(dims){
+        pattern <- rep(dims, nrow(viralSubset))
+        diff <- mean(abs(viralSubset[, 2] - pattern))
+        return(diff)
+    }
+    optim <- nloptr::directL(wrapper, minReadCov, maxReadCov, control = list(xtol_rel = 1e-4, maxeval = DirectMaxEval))
+    pattern <- rep(optim$par, nrow(viralSubset))
+    diff <- mean(abs(viralSubset[, 2] - pattern))
+    bestMatchInfo <-
+        list(
+            diff,
+            optim$par,
+            nrow(viralSubset),
+            "NA",
+            1,
+            nrow(viralSubset),
+            "NoPattern"
+        )
+    return(bestMatchInfo)
+}
+

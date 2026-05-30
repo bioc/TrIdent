@@ -487,7 +487,8 @@ TrIdentOutput <- TrIdentClassifier(
 TrIdentClassifier(VLPpileup, WCpileup,
   windowSize = 1000, minBlockSize = 10000,
   maxBlockSize = Inf, minContigLength = 30000, minSlope = 0.001, 
-  minSlopeSize = 20000, minHCNPRatio=2, verbose = TRUE, SaveFilesTo
+  minSlopeSize = 20000, minHCNPRatio=2, verbose = TRUE, searchMethod= "grid",
+  DirectMaxEval = 100, SaveFilesTo
 )
 ```
 
@@ -513,6 +514,9 @@ and creation of pileup.
 * `WCReads`: Optional, the number of whole-community reads used for mapping 
 and creation of pileup. 
 * `verbose`: TRUE or FALSE. Print progress messages to console. Default is TRUE.
+* `searchMethod`: Search method to use during pattern-matching. Either "grid" 
+for the original grid search or "direct" for DIRECT global optimization.
+* `DirectMaxEval`: Maximum number of DIRECT evaluations to make. Default is 100.
 * `SaveFilesTo`: Optional, Provide a path to the directory you wish to save 
 output to. A folder will be made within the provided directory to store 
 results.

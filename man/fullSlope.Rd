@@ -4,7 +4,14 @@
 \alias{fullSlope}
 \title{Sloping pattern builder}
 \usage{
-fullSlope(viralSubset, windowSize, minSlope, minSlopeSize)
+fullSlope(
+  viralSubset,
+  windowSize,
+  minSlope,
+  minSlopeSize,
+  searchMethod,
+  DirectMaxEval
+)
 }
 \arguments{
 \item{viralSubset}{A subset of the read coverage pileup that pertains only to
@@ -15,6 +22,11 @@ the contig currently being assessed}
 \item{minSlope}{The minimum slope value to test for sloping patterns}
 
 \item{minSlopeSize}{The minimum width of sloping patterns.}
+
+\item{searchMethod}{Search method to use. Either "grid" for the original grid
+search or "direct" for DIRECT global optimization.}
+
+\item{DirectMaxEval}{Maximum number of DIRECT evaluations to make.}
 }
 \value{
 List containing two objects
