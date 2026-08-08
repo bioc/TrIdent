@@ -35,8 +35,8 @@ library(kableExtra)
 
 **TrIdent**- **Tr**ansduction **Ident**ification
 
-TrIdent consists of three main functions which should be run in the following 
-order:
+TrIdent consists of four main functions which should be run in the following 
+order (Steps 3 and 4 can be interchanged):
 
 1. **`TrIdentClassifier()`**: Classifies contigs as 'Prophage-like', 'Sloping', 
 'HighCovNoPattern', and 'NoPattern' using read coverage pattern-matching.
@@ -45,6 +45,8 @@ order:
 3. **`specializedTransductionID()`**: Searches contigs classified as 
 Prophage-like by `TrIdentClassifier()` for associated specialized transduction 
 events.
+4. **`geneSearch()`**: Searches for genes or gene annotations of interest on
+contigs positively classified by `TrIdentClassifier()`. 
 
 TrIdent automates the analysis of transductomics data by detecting, 
 classifying, and characterizing read coverage patterns associated with 
@@ -149,6 +151,7 @@ start of each new contig.
 ```{r echo=FALSE}
 data("WholeCommunitySamplePileup")
 data("VLPFractionSamplePileup")
+data("gffSample")
 kable(head(VLPFractionSamplePileup), row.names = FALSE) %>%
   kable_styling(latex_options = "HOLD_position")
 ```
@@ -488,7 +491,7 @@ TrIdentClassifier(VLPpileup, WCpileup,
   windowSize = 1000, minBlockSize = 10000,
   maxBlockSize = Inf, minContigLength = 30000, minSlope = 0.001, 
   minSlopeSize = 20000, minHCNPRatio=2, verbose = TRUE, searchMethod= "grid",
-  DirectMaxEval = 100, SaveFilesTo
+  DirectMaxEval = 100, globalLocal="local", SaveFilesTo
 )
 ```
 
@@ -518,6 +521,9 @@ and creation of pileup.
 for the original grid search or "direct" for DIRECT global optimization. 
 Default is "grid".
 * `DirectMaxEval`: Maximum number of DIRECT evaluations to make. Default is 100.
+* `globalLocal`: Use global or local DIRECT search. Local search makes the 
+DIRECT algorithm more efficient for contigs without multiple potential read
+coverage patterns. Default is local. 
 * `SaveFilesTo`: Optional, Provide a path to the directory you wish to save 
 output to. A folder will be made within the provided directory to store 
 results.
@@ -805,6 +811,111 @@ View select plots:
 SpecTransduc$Plots$NODE_62
 SpecTransduc$Plots$NODE_135
 ```
+
+# geneSearch()
+
+`geneSearch()` helps users explore gene annotations of interest in and
+around read coverage pattern-matches.
+
+## Function components
+
+### Search for gene annotations
+`geneSearch()` utilizes a .gff file and the pattern-matching results from 
+`TrIdentClassifier()` to locate gene annotations that match provided `keyWords`. 
+The .gff file should be a S4Vectors::DataFrame object imported into R using the 
+Bioc.gff package. First, the information associated with the gene or gene 
+product (depending on what the user selects for the `geneOrProduct`  parameter) 
+is extracted from the attributes column of the .gff file. Then, the .gff file 
+is subset to include only the annotations associated with the contig being 
+assessed. From here, the search can vary quite a bit depending on the 
+parameters the user selects for the `inPatMat` and `bpRange` parameters. If 
+`inPatMat = FALSE` (the default), then gene annotations located anywhere on the 
+contig that match one or more of the provided `keyWords` will be visualized. If 
+`inPatMat = TRUE`, then only gene annotations within the region of the 
+pattern-match willbe searched for matches to the provided `keyWords`. The 
+`bpRange` parameter can be used if `inPatMat = TRUE` and allows the search 
+range to be extended a specified numberof base pairs to the left and right of 
+the pattern-match borders. Gene annotationare included in the search if the end 
+of the open reading frame (defined by the 'end' values in the .gff file) falls 
+within the search region. 
+
+### Plot gene annotation locations
+The read coverage and locations of gene annotations that match the provided 
+`keyWords` are visualized for each contig with matches. The borders of the 
+pattern-matchdetected by `TrIdentClassifier()` are marked on the plot with 
+orange vertical lines. If `inPatMat = TRUE` and `bpRange` is set to a non-zero 
+value, then the extended searchrange outside the pattern-match borders are 
+marked on the plot with orange dashed verticallines. The matching gene 
+annotation locations are marked on the plot withblack vertical lines at the 
+start position of the associated open reading frames. 
+
+## Usage
+
+**Default arguments:**
+
+With defaults, all contigs classified as "Prophage-like", "Sloping" and 
+"HighCovNoPattern" are searched for gene annotations that match any of the 
+provided keywords.
+*The entire contig is searched, not just the pattern-match region.*   
+```{r}
+GeneMatches <- geneSearch(
+                TrIdentResults = TrIdentOutput, 
+                VLPpileup = VLPFractionSamplePileup, 
+                gff = gffSample, 
+                searchCol = "pfam_desc", 
+                keyWords = c("phage", "spike", "holin", "capsid", "tail")
+  )
+```
+
+## Arguments/parameters
+```{r eval=FALSE}
+geneSearch(
+  TrIdentResults, 
+  VLPpileup, 
+  gff,
+  searchCol, 
+  keyWords, 
+  inPatMat = FALSE,
+  bpRange = 0, 
+  saveFilesTo, 
+  verbose = TRUE
+  ) 
+```
+
+- **`TrIdentResults`**: The output from `TrIdentClassifier()`. 
+- **`VLPpileup`**: A .txt file containing mapped sequencing read coverages 
+averaged over 100 bp windows/bins.
+- **`gff`**: A .gff file containing gene annotations associated with 
+the whole-community contigs. Imported into R using Bioc.gff::readGFF function.
+- **`searchCol`**: The exact column name (in quotes) in the gff file that you'd 
+like to search for specific `keyWords`. Commonly annotation, product, gene, or 
+acc columns, for example, however the specific name may change based on 
+annotation tool used. For example: "pfam_desc". 
+- **`keyWords`**: The keyWord(s) to search for. Case independent. Searches will 
+return the string that contains the matching keyWord. KeyWord(s) must be in 
+quotes, comma-separated, and surrounded by c() 
+i.e( c("antibiotic", "resistance", "drug") )
+- **`inPatMat`**: TRUE or FALSE. If TRUE, only search for gene-annotations in
+the pattern-match region. Default is FALSE (i.e search the
+entire contig for the gene annotation key-words)
+- **`bpRange`**: If `inPatMat = TRUE`, the user may specify the region 
+(in base pairs) that should be searched to the left and right of the 
+pattern-match region. Default is 0.
+- **`saveFilesTo`**: Optional, Provide a path to the directory you wish to save 
+output to. A folder will be made within the provided directory to store 
+results.
+- **`verbose`**: TRUE or FALSE. Print progress messages to console. Default is 
+TRUE.
+
+## Output
+
+The output of `geneSearch()` is a list of ggplot objects. 
+
+View select plots:
+```{r fig.width=6, fig.height=5}
+GeneMatches$NODE_617
+```
+
 
 # Supplemental information
 

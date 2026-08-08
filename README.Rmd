@@ -74,6 +74,7 @@ library(TrIdent)
 ## Load sample datasets
 data("VLPFractionSamplePileup")
 data("WholeCommunitySamplePileup")
+data("gffSample")
 
 ## Run TrIdent:
 ## Run first:
@@ -89,10 +90,19 @@ plotTrIdentResults(
   TrIdentResults = TrIdentOutput
 )
 
-## Run third:
+## Run third/fourth:
 specializedTransductionID(
   VLPpileup = VLPFractionSamplePileup,
   TrIdentResults = TrIdentOutput
 ) 
+
+## Run third/fourth
+geneSearch(
+   TrIdentResults = TrIdentOutput,
+   VLPpileup = VLPFractionSamplePileup,
+   gff = gffSample,
+   searchCol="pfam_desc",
+   keyWords=c("toxin", "drug", "resistance", "phage")
+ ) 
 ```
 

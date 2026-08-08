@@ -9,11 +9,12 @@
 #' @param searchMethod Search method to use. Either "grid" for the original grid
 #'   search or "direct" for DIRECT global optimization.
 #' @param DirectMaxEval Maximum number of DIRECT evaluations to make.
+#' @param globalLocal Use global or local DIRECT search. Default is local. 
 #' @return List
 #' @keywords internal
-noPattern <- function(viralSubset, searchMethod, DirectMaxEval) {
+noPattern <- function(viralSubset, searchMethod, DirectMaxEval,globalLocal) {
     if(searchMethod =="direct"){
-     bestMatchInfo <- optimNoPattern(viralSubset, DirectMaxEval)
+     bestMatchInfo <- optimNoPattern(viralSubset, DirectMaxEval, globalLocal)
     }else if (searchMethod=="grid"){
   pattern1 <- rep(median(viralSubset[, 2]), nrow(viralSubset))
   pattern2 <- rep(mean(viralSubset[, 2]), nrow(viralSubset))
@@ -46,9 +47,10 @@ noPattern <- function(viralSubset, searchMethod, DirectMaxEval) {
 #' @param viralSubset A subset of the read coverage pileup that pertains only to
 #'   the contig currently being assessed
 #' @param DirectMaxEval Maximum number of DIRECT evaluations to make.
+#' @param globalLocal Use global or local DIRECT search. Default is local. 
 #' @return List
 #' @keywords internal
-optimNoPattern <- function(viralSubset, DirectMaxEval){
+optimNoPattern <- function(viralSubset, DirectMaxEval, globalLocal){
     maxReadCov <- max(viralSubset[, 2])
     minReadCov <- min(viralSubset[, 2])
     wrapper <- function(dims){
@@ -56,7 +58,10 @@ optimNoPattern <- function(viralSubset, DirectMaxEval){
         diff <- mean(abs(viralSubset[, 2] - pattern))
         return(diff)
     }
-    optim <- nloptr::directL(wrapper, minReadCov, maxReadCov, control = list(xtol_rel = 1e-4, maxeval = DirectMaxEval))
+    optim <- if(globalLocal=="local"){
+            nloptr::directL(wrapper, minReadCov, maxReadCov, control = list(xtol_rel = 1e-4, maxeval = DirectMaxEval))}
+            else{
+            nloptr::direct(wrapper, minReadCov, maxReadCov, control = list(xtol_rel = 1e-4, maxeval = DirectMaxEval))}
     pattern <- rep(optim$par, nrow(viralSubset))
     diff <- mean(abs(viralSubset[, 2] - pattern))
     bestMatchInfo <-

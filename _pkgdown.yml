@@ -8,3 +8,4 @@ reference:
   - TrIdentClassifier
   - plotTrIdentResults
   - specializedTransductionID
+  - geneSearch

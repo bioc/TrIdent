@@ -15,7 +15,8 @@ patternMatcher(
   minSlopeSize,
   verbose,
   searchMethod,
-  DirectMaxEval
+  DirectMaxEval,
+  globalLocal
 )
 }
 \arguments{
@@ -48,6 +49,8 @@ pattern-matching on. Must be at least 20,000 bp. Default is 30,000 bp.}
 search or "direct" for DIRECT global optimization.}
 
 \item{DirectMaxEval}{Maximum number of DIRECT evaluations to make.}
+
+\item{globalLocal}{Use global or local DIRECT search. Default is local.}
 }
 \value{
 List containing three objects.

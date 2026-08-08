@@ -10,7 +10,8 @@ blockBuilder(
   minBlockSize,
   maxBlockSize,
   searchMethod,
-  DirectMaxEval
+  DirectMaxEval,
+  globalLocal
 )
 }
 \arguments{
@@ -28,7 +29,9 @@ Default is NA.}
 \item{searchMethod}{Search method to use. Either "grid" for the original grid
 search or "direct" for DIRECT global optimization.}
 
-\item{DirectMaxEval}{Maximum number of DIRECT evaluations to make.
+\item{DirectMaxEval}{Maximum number of DIRECT evaluations to make.}
+
+\item{globalLocal}{Use global or local DIRECT search. Default is local. 
 Default is 100.}
 }
 \value{

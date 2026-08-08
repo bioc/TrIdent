@@ -4,13 +4,15 @@
 \alias{optimNoPattern}
 \title{Function for applying DIRECT global optimization algorithm}
 \usage{
-optimNoPattern(viralSubset, DirectMaxEval)
+optimNoPattern(viralSubset, DirectMaxEval, globalLocal)
 }
 \arguments{
 \item{viralSubset}{A subset of the read coverage pileup that pertains only to
 the contig currently being assessed}
 
 \item{DirectMaxEval}{Maximum number of DIRECT evaluations to make.}
+
+\item{globalLocal}{Use global or local DIRECT search. Default is local.}
 }
 \value{
 List

@@ -10,7 +10,8 @@ slopeWithStart(
   minSlope,
   minSlopeSize,
   searchMethod,
-  DirectMaxEval
+  DirectMaxEval,
+  globalLocal
 )
 }
 \arguments{
@@ -27,6 +28,8 @@ the contig currently being assessed}
 search or "direct" for DIRECT global optimization.}
 
 \item{DirectMaxEval}{Maximum number of DIRECT evaluations to make.}
+
+\item{globalLocal}{Use global or local DIRECT search. Default is local.}
 }
 \value{
 List containing two objects

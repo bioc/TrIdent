@@ -10,7 +10,8 @@ optimSlopeWithStart(
   viralSubset,
   windowSize,
   leftOrRight,
-  DirectMaxEval
+  DirectMaxEval,
+  globalLocal
 )
 }
 \arguments{
@@ -27,6 +28,8 @@ the contig currently being assessed}
 'Left') or positive slope (right to left, i.e. 'Right')}
 
 \item{DirectMaxEval}{Maximum number of DIRECT evaluations to make.}
+
+\item{globalLocal}{Use global or local DIRECT search. Default is local.}
 }
 \value{
 List object

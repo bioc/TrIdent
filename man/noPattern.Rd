@@ -4,7 +4,7 @@
 \alias{noPattern}
 \title{No pattern pattern-match}
 \usage{
-noPattern(viralSubset, searchMethod, DirectMaxEval)
+noPattern(viralSubset, searchMethod, DirectMaxEval, globalLocal)
 }
 \arguments{
 \item{viralSubset}{A subset of the read coverage pileup that pertains only to
@@ -14,6 +14,8 @@ the contig currently being assessed}
 search or "direct" for DIRECT global optimization.}
 
 \item{DirectMaxEval}{Maximum number of DIRECT evaluations to make.}
+
+\item{globalLocal}{Use global or local DIRECT search. Default is local.}
 }
 \value{
 List

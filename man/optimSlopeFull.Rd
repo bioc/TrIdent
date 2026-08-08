@@ -4,7 +4,14 @@
 \alias{optimSlopeFull}
 \title{Function for applying DIRECT global optimization algorithm}
 \usage{
-optimSlopeFull(minSlope, viralSubset, windowSize, leftOrRight, DirectMaxEval)
+optimSlopeFull(
+  minSlope,
+  viralSubset,
+  windowSize,
+  leftOrRight,
+  DirectMaxEval,
+  globalLocal
+)
 }
 \arguments{
 \item{minSlope}{The minimum slope value to test for sloping patterns}
@@ -18,6 +25,8 @@ the contig currently being assessed}
 'Left') or positive slope (right to left, i.e. 'Right')}
 
 \item{DirectMaxEval}{Maximum number of DIRECT evaluations to make.}
+
+\item{globalLocal}{Use global or local DIRECT search. Default is local.}
 }
 \value{
 List

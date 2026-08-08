@@ -19,6 +19,7 @@ TrIdentClassifier(
   verbose = TRUE,
   searchMethod = "grid",
   DirectMaxEval = 100,
+  globalLocal = "local",
   SaveFilesTo
 )
 }
@@ -78,6 +79,10 @@ search or "direct" for DIRECT global optimization.}
 
 \item{DirectMaxEval}{Maximum number of DIRECT evaluations to make. Default is 100.
 Default is 100.}
+
+\item{globalLocal}{Use global or local DIRECT search. Local search makes the 
+DIRECT algorithm more efficient for contigs without multiple potential read
+coverage patterns. Default is local.}
 
 \item{SaveFilesTo}{Optional, Provide a path to the directory you wish to save
 output to. A folder will be made within the provided directory to store

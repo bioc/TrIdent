@@ -55,6 +55,9 @@
 #'   search or "direct" for DIRECT global optimization.
 #' @param DirectMaxEval Maximum number of DIRECT evaluations to make. Default is 100.
 #'  Default is 100.
+#' @param globalLocal Use global or local DIRECT search. Local search makes the 
+#' DIRECT algorithm more efficient for contigs without multiple potential read
+#' coverage patterns. Default is local. 
 #' @importFrom utils capture.output
 #' @return Large list containing 5 objects
 #' @export
@@ -80,6 +83,7 @@ TrIdentClassifier <- function(VLPpileup,
                               verbose = TRUE,
                               searchMethod= "grid",
                               DirectMaxEval = 100,
+                              globalLocal="local",
                               SaveFilesTo) {
   ## error catching
   if (!(windowSize %in% list(100, 200, 500, 1000))) {
@@ -99,6 +103,9 @@ TrIdentClassifier <- function(VLPpileup,
   }
   if (!searchMethod %in% c("grid", "direct")) {
         stop('searchMethod must be "grid" or "direct"')
+  }
+  if (!globalLocal %in% c("local", "global")) {
+        stop('globalLocal must be "local" or "global"')
     }
   ## input validation
   if (nrow(VLPpileup) != nrow(WCpileup)) {
@@ -135,7 +142,8 @@ TrIdentClassifier <- function(VLPpileup,
       minSlopeSize,
       verbose,
       searchMethod,
-      DirectMaxEval
+      DirectMaxEval,
+      globalLocal
     )
   VLPReads <- ifelse(missing(VLPReads), 1, VLPReads)
   WCReads <- ifelse(missing(WCReads), 1, WCReads)

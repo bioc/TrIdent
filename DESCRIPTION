@@ -2,7 +2,7 @@ Package: TrIdent
 Type: Package
 BiocType: Software 
 Title: TrIdent - Transduction Identification
-Version: 1.5.1
+Version: 1.5.2
 Authors@R: 
   c(person(given = "Jessie",
            family = "Maier",
@@ -52,7 +52,8 @@ Imports:
   stringr, 
   tidyr, 
   roll,
-  nloptr
+  nloptr,
+  S4Vectors
 biocViews: Coverage, Metagenomics, PatternLogic, Classification, Sequencing
 URL: https://github.com/jlmaier12/TrIdent, https://jlmaier12.github.io/TrIdent/
 BugReports: https://github.com/jlmaier12/TrIdent/issues 
@@ -64,5 +65,4 @@ Suggests:
 VignetteBuilder: knitr
 Depends: 
     R (>= 4.2.0)
-Config/testthat/edition: 3
 Config/roxygen2/version: 8.0.0

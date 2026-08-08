@@ -13,6 +13,7 @@
 #' @param searchMethod Search method to use. Either "grid" for the original grid
 #'   search or "direct" for DIRECT global optimization.
 #' @param DirectMaxEval Maximum number of DIRECT evaluations to make.
+#' @param globalLocal Use global or local DIRECT search. Default is local. 
 #'  Default is 100.
 #' @return List containing three objects
 #' @keywords internal
@@ -22,7 +23,8 @@ blockBuilder <-
            minBlockSize,
            maxBlockSize,
            searchMethod,
-           DirectMaxEval) {
+           DirectMaxEval,
+           globalLocal) {
     if (nrow(viralSubset)-5000/windowSize < minBlockSize/windowSize) { 
         bestMatchInfoLeft <-
             list(
@@ -100,7 +102,8 @@ blockBuilder <-
         minReadCov,
         maxReadCov,
         startingCovs,
-        DirectMaxEval
+        DirectMaxEval,
+        globalLocal
       ))
     } else if (searchMethod == "grid") {
       for (i in seq_along(startingCovs)) {
@@ -191,6 +194,7 @@ blockBuilder <-
 #' @param maxReadCov Maximum VLP-fraction read coverage value
 #' @param startingCovs Candidate coverage values used to initialize the search
 #' @param DirectMaxEval Maximum number of DIRECT evaluations to make. Default is 100.
+#' @param globalLocal Use global or local DIRECT search. Default is local. 
 #' @return List containing three objects
 #' @keywords internal
 directBlockBuilder <- function(viralSubset,
@@ -201,7 +205,8 @@ directBlockBuilder <- function(viralSubset,
                                minReadCov,
                                maxReadCov,
                                startingCovs,
-                               DirectMaxEval) {
+                               DirectMaxEval,
+                               globalLocal) {
   minBlockRows <- minBlockSize / windowSize
   sideBuffer <- 5000 / windowSize
   contigCoverage <- viralSubset[, 2]
@@ -272,11 +277,12 @@ directBlockBuilder <- function(viralSubset,
     )
   }
 
-  runDirectLSearch <- function(fullLeftRight, initial, lower, upper, DirectMaxEval) {
+  runDirectLSearch <- function(fullLeftRight, initial, lower, upper, DirectMaxEval, globalLocal) {
     objective <- function(par) blockObjective(fullLeftRight, par)
-    optResult <-
-      nloptr::directL(objective, lower, upper, 
-                     control = list(xtol_rel = 1e-4, maxeval = DirectMaxEval))
+    optResult <- if(globalLocal=="local"){
+                nloptr::directL(objective, lower, upper, control = list(xtol_rel = 1e-4, maxeval = DirectMaxEval))}
+                else{
+                nloptr::direct(objective, lower, upper, control = list(xtol_rel = 1e-4, maxeval = DirectMaxEval))}
     optResult$par
   }
   leftOpt <-
@@ -284,21 +290,21 @@ directBlockBuilder <- function(viralSubset,
       "Left",
       c(startingCovs[1], blockLength),
       c(startingCovs[1], minBlockRows),
-      c(maxReadCov, blockLength), DirectMaxEval
+      c(maxReadCov, blockLength), DirectMaxEval, globalLocal
     )
   rightOpt <-
     runDirectLSearch(
       "Right",
       c(startingCovs[1], blockLength),
       c(startingCovs[1], minBlockRows),
-      c(maxReadCov, blockLength), DirectMaxEval
+      c(maxReadCov, blockLength), DirectMaxEval, globalLocal
     )
   fullOpt <-
     runDirectLSearch(
       "Full",
       c(startingCovs[1], blockLengthFull, 0),
       c(startingCovs[1], minBlockRows, 0),
-      c(maxReadCov, blockLengthFull, 1), DirectMaxEval
+      c(maxReadCov, blockLengthFull, 1), DirectMaxEval, globalLocal
     )
   bestMatchInfoLeft <- makeBestMatchInfo("Left", leftOpt)
   bestMatchInfoRight <- makeBestMatchInfo("Right", rightOpt)

@@ -26,6 +26,7 @@
 #' @param searchMethod Search method to use. Either "grid" for the original grid
 #'   search or "direct" for DIRECT global optimization.
 #' @param DirectMaxEval Maximum number of DIRECT evaluations to make.
+#' @param globalLocal Use global or local DIRECT search. Default is local. 
 #' @return List containing three objects.
 #' @keywords internal
 patternMatcher <-
@@ -39,7 +40,8 @@ patternMatcher <-
            minSlopeSize,
            verbose,
            searchMethod,
-           DirectMaxEval) {
+           DirectMaxEval,
+           globalLocal) {
     contigNames <- unique(VLPpileup[, 1])
     bestMatchList <- list()
     filteredOutContigs <- rep(NA, length(contigNames))
@@ -86,21 +88,22 @@ patternMatcher <-
           minBlockSize,
           maxBlockSize,
           searchMethod,
-          DirectMaxEval
+          DirectMaxEval,
+          globalLocal
         )
       }
       if (length(unique(viralSubset[, 2])) == 1) {
-        bestMatchSumm <- list(noPattern(viralSubset, searchMethod, DirectMaxEval))
+        bestMatchSumm <- list(noPattern(viralSubset, searchMethod, DirectMaxEval, globalLocal))
         bestMatchScoreSumm <-
           c(bestMatchSumm[[1]][[1]]) %>% as.numeric()
       } else {
         slopeList <- slopeWithStart(viralSubset, windowSize, minSlope, 
-                                    minSlopeSize, searchMethod, DirectMaxEval)
+                                    minSlopeSize, searchMethod, DirectMaxEval, globalLocal)
         slopeListNoStart <-
           fullSlope(viralSubset, windowSize, minSlope, 
-                    minSlopeSize, searchMethod, DirectMaxEval)
+                    minSlopeSize, searchMethod, DirectMaxEval, globalLocal)
         bestMatchSumm <- list(
-          noPattern(viralSubset, searchMethod, DirectMaxEval),
+          noPattern(viralSubset, searchMethod, DirectMaxEval, globalLocal),
           blocksList[[1]],
           blocksList[[2]],
           blocksList[[3]],

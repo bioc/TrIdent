@@ -13,7 +13,8 @@ directBlockBuilder(
   minReadCov,
   maxReadCov,
   startingCovs,
-  DirectMaxEval
+  DirectMaxEval,
+  globalLocal
 )
 }
 \arguments{
@@ -35,6 +36,8 @@ the contig currently being assessed}
 \item{startingCovs}{Candidate coverage values used to initialize the search}
 
 \item{DirectMaxEval}{Maximum number of DIRECT evaluations to make. Default is 100.}
+
+\item{globalLocal}{Use global or local DIRECT search. Default is local.}
 }
 \value{
 List containing three objects

@@ -12,10 +12,11 @@
 #' @param searchMethod Search method to use. Either "grid" for the original grid
 #'   search or "direct" for DIRECT global optimization.
 #' @param DirectMaxEval Maximum number of DIRECT evaluations to make.
+#' @param globalLocal Use global or local DIRECT search. Default is local. 
 #' @return List containing two objects
 #' @keywords internal
 fullSlope <- function(viralSubset, windowSize, minSlope, 
-                      minSlopeSize, searchMethod, DirectMaxEval) {
+                      minSlopeSize, searchMethod, DirectMaxEval, globalLocal) {
     if (nrow(viralSubset) < minSlopeSize/windowSize) {
         bestMatchInfoLR <-
             list(
@@ -34,13 +35,15 @@ fullSlope <- function(viralSubset, windowSize, minSlope,
             viralSubset,
             windowSize, 
             "Left",
-            DirectMaxEval)
+            DirectMaxEval,
+            globalLocal)
         bestMatchInfoRL <- optimSlopeFull(
             minSlope,
             viralSubset,
             windowSize, 
             "Right",
-            DirectMaxEval)
+            DirectMaxEval,
+            globalLocal)
     }else if (searchMethod=="grid"){
   maxReadCov <- max(viralSubset[, 2])
   minReadCov <- min(viralSubset[, 2])
@@ -193,9 +196,11 @@ changeSlope <-
 #' @param windowSize The window size used to re-average read coverage pileup
 #' @param minSlope The minimum slope value to test for sloping patterns
 #' @param DirectMaxEval Maximum number of DIRECT evaluations to make.
+#' @param globalLocal Use global or local DIRECT search. Default is local.
 #' @return List
 #' @keywords internal
-optimSlopeFull <- function(minSlope, viralSubset, windowSize, leftOrRight, DirectMaxEval){
+optimSlopeFull <- function(minSlope, viralSubset, windowSize, 
+                           leftOrRight, DirectMaxEval,globalLocal){
     maxReadCov <- max(viralSubset[, 2])
     minReadCov <- min(viralSubset[, 2])
     halfReadCov <- minReadCov + (abs(maxReadCov - minReadCov) / 2)
@@ -212,7 +217,10 @@ optimSlopeFull <- function(minSlope, viralSubset, windowSize, leftOrRight, Direc
             windowSize,
             minSlope)[[1]])
     }
-    optim <- nloptr::directL(wrapper, lower, upper, control = list(xtol_rel = 1e-4, maxeval = DirectMaxEval))
+    optim <- if(globalLocal=="local"){
+            nloptr::directL(wrapper, lower, upper, control = list(xtol_rel = 1e-4, maxeval = DirectMaxEval))}
+             else{
+            nloptr::direct(wrapper, lower, upper, control = list(xtol_rel = 1e-4, maxeval = DirectMaxEval))}
     bestmatch <- makeFullSlopesDirect(
         leftOrRight, 
         viralSubset, 
