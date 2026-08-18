@@ -912,6 +912,10 @@ TRUE.
 The output of `geneSearch()` is a list of ggplot objects. 
 
 View select plots:
+
+Red vertical lines indicate boundaries of the associated TrIdent pattern-match.
+If `inPatMat`=TRUE and a `bpRange` is set, red dotted vertical lines will 
+indicate the search region beyond the pattern-match borders.
 ```{r fig.width=6, fig.height=5}
 GeneMatches$NODE_617
 ```
