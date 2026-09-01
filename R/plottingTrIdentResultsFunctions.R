@@ -28,6 +28,9 @@
 #' "Prophage-like", "Sloping", or "HighCovNoPattern".
 #' @param logScale TRUE or FALSE, display VLP-fraction read coverage in log10
 #'   scale. Default is FALSE.
+#' @param allPlots TRUE or FALSE. Display read coverage patterns for all contigs 
+#' greater than the length cutoff (default 30 kbp). Default is FALSE. *Warning* This may 
+#' produce a lot of plots and a very large list object!
 #' @param saveFilesTo Optional, Provide a path to the directory you wish to save
 #'   output to. A folder will be made within the provided directory to store
 #'   results. 
@@ -48,6 +51,7 @@ plotTrIdentResults <- function(VLPpileup,
                                TrIdentResults,
                                onlyPlot,
                                logScale = FALSE,
+                               allPlots = FALSE,
                                saveFilesTo) {
   ## input validation
   if (nrow(VLPpileup) != nrow(WCpileup)) {
@@ -63,7 +67,17 @@ plotTrIdentResults <- function(VLPpileup,
   }
   position <- coverage <- NULL
   windowSize <- TrIdentResults[[5]]
-  summaryTable <- TrIdentResults[[2]]
+  if(allPlots){
+      filtOut <-  TrIdentResults[[4]]
+      filtOut <- filtOut[which(filtOut[,2]=="Low VLP-fraction read cov"),]
+      summaryTable <- TrIdentResults[[1]]
+      colnames(filtOut)[1] <- "contigName"
+      summaryTable <- merge(summaryTable, filtOut, by="contigName", all=TRUE)
+      summaryTable$classifications <- ifelse(is.na(summaryTable$classifications), 
+                                            "NoPattern", summaryTable$classifications)
+  } else {
+      summaryTable <- TrIdentResults[[2]]
+  }
   summaryTable$rowIndexes <- seq(1,nrow(summaryTable))
   classifList <- TrIdentResults[[3]]
   VLPpileup <- pileupFormatter(VLPpileup)
@@ -85,7 +99,14 @@ plotTrIdentResults <- function(VLPpileup,
     patternMatchInfo <-
         summaryTable[which(summaryTable[, 1] == contigName), ]
     classification <- patternMatchInfo[, 2]
-    matchLength <- patternMatchInfo[, 5]
+    if (classification != "NoPattern" & allPlots==TRUE){
+        summaryTable2 <- TrIdentResults[[2]]
+        summaryTable2$rowIndexes <- seq(1,nrow(summaryTable2))
+        rowIndex <- summaryTable2[which(summaryTable2[,1]==contigName),10]
+        patternMatchInfo <-
+            summaryTable2[which(summaryTable2[, 1] == contigName), ]
+    }
+    matchLength <- patternMatchInfo[, 4]
     viralSubset <-
       changeWindowSize(
         VLPpileup[which(VLPpileup[, 1] == contigName), ],
@@ -107,28 +128,32 @@ plotTrIdentResults <- function(VLPpileup,
     } else {
         coverageTypeViral <- viralSubset$coverage
         coverageTypeMicrobial <- microbialSubset$coverage
+        if (classification=="NoPattern") {
+            pattern <- rep(0, nrow(viralSubset)) }
+        else {
         pattern <-
             patternBuilder(viralSubset, classifList, classification, rowIndex)
+        }
     }
     viralSubset <- cbind.data.frame(viralSubset, pattern)
     if (classification == "Sloping") {
       subtitleInfo <- paste(
         "Slope:",
-        patternMatchInfo[10]
-      )
+        patternMatchInfo[9])
     } else if (classification == "HighCovNoPattern") {
       subtitleInfo <- paste("VLP:WC ratio:", patternMatchInfo[4])
     } else if (classification == "Prophage-like") {
-      if (is.na(patternMatchInfo[8])) {
+      if (is.na(patternMatchInfo[7])) {
         subtitleInfo <- NULL
-      } else if (patternMatchInfo[8] == "Elevated") {
+      } else if (patternMatchInfo[7] == "Elevated") {
         subtitleInfo <- "Active/highly abundant Prophage-like element"
-      } else if (patternMatchInfo[8] == "Depressed") {
+      } else if (patternMatchInfo[7] == "Depressed") {
         subtitleInfo <- "Not homogenously integrated Prophage-like element"
       } else {
         subtitleInfo <- NULL
       }
-    }
+    } else {
+        subtitleInfo <- NULL}
     wholecomm_plot <-
       ggplot(data = microbialSubset, aes(x = position, y = coverageTypeMicrobial)) +
       geom_area(fill = "deepskyblue3") +
@@ -196,11 +221,6 @@ plotTrIdentResults <- function(VLPpileup,
   plots <- Filter(Negate(is.null), plots)
   contigNames <- vapply(seq_len(nrow(summaryTable)), function(i) {
       contigName <- summaryTable[i,1]
-      viralSubset <-
-          changeWindowSize(
-              VLPpileup[which(VLPpileup[, 1] == contigName), ],
-              windowSize
-          )
       contigName
   }, character(1))
   contigNames <- (contigNames[!vapply(contigNames, is.null, logical(1))])
@@ -329,11 +349,11 @@ patternBuilder <-
       }
       ## for NoPattern, min read cov = med read cov and
       ## max read cov = contig length
-    } else if (classification == "HighCovNoPattern") {
-      pattern <- rep(
+      } else if (classification == "HighCovNoPattern") {
+        pattern <- rep(
         minReadCov,
         maxReadCov
       )
-    }
+      } 
     return(pattern)
   }

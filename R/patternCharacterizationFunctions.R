@@ -16,11 +16,8 @@ contigClassSumm <- function(bestMatchList) {
   contigName <- vapply(seq_along(bestMatchList), function(i) {
     bestMatchList[[i]][[8]]
   }, character(1))
-  normMatchScore <- vapply(seq_along(bestMatchList), function(i) {
-    bestMatchList[[i]][[9]]
-  }, numeric(1))
   classifSumm <-
-    cbind.data.frame(contigName, classifications, normMatchScore)
+    cbind.data.frame(contigName, classifications)
   return(classifSumm)
 }
 
@@ -42,7 +39,7 @@ slopeSumm <- function(classifSumm, slopingClassifList, windowSize) {
   }
   for (i in seq_along(slopingClassifList)) {
     classifSumm[which(classifSumm[, 1] ==
-      slopingClassifList[[i]][[8]]), 10] <-
+      slopingClassifList[[i]][[8]]), 9] <-
       round(slopingClassifList[[i]][[4]] / windowSize, digits = 4)
   }
   return(classifSumm)
@@ -71,11 +68,11 @@ patternMatchSize <- function(classifSumm, classifList, windowSize, verbose) {
     contigName <- classifList[[i]][[8]]
     startPos <- classifList[[i]][[5]]
     endPos <- classifList[[i]][[6]]
-    classifSumm[which(classifSumm[, 1] == contigName), 5] <-
+    classifSumm[which(classifSumm[, 1] == contigName), 4] <-
       (length(c(startPos:endPos)) - 1) * windowSize
-    classifSumm[which(classifSumm[, 1] == contigName), 6] <-
+    classifSumm[which(classifSumm[, 1] == contigName), 5] <-
       startPos * windowSize
-    classifSumm[which(classifSumm[, 1] == contigName), 7] <-
+    classifSumm[which(classifSumm[, 1] == contigName), 6] <-
       endPos * windowSize
   }
   return(classifSumm)
@@ -130,7 +127,7 @@ VLPtoWCRatioCalc <- function(classifSumm, WCpileup, VLPpileup, VLPReads, WCReads
     classifSumm[i, 2] <-
       ifelse(VLPtoWCratio > minHCNPRatio, "HighCovNoPattern", "NoPattern")
     
-    classifSumm[i, 4] <- VLPtoWCratio
+    classifSumm[i, 3] <- VLPtoWCratio
   }
   return(classifSumm)
 }
@@ -162,7 +159,7 @@ prophageLikeElevation <-
     if (verbose) {
       message(
         "Identifying highly active/abundant or heterogenously integrated
-      Prophage-like elements"
+         Prophage-like elements"
       )
     }
     classifSummTable$proLikeWCReadCov <- rep(NA, nrow(classifSummTable))
@@ -198,19 +195,19 @@ prophageLikeElevation <-
           digits = 4
         )
       classifSummTable[which(classifSummTable[, 1] ==
-        contigName), 9] <- ratio
+        contigName), 8] <- ratio
       if (is.na(ratio)) {
           classifSummTable[which(classifSummTable[, 1] ==
-          contigName), 8] <- NA
+          contigName), 7] <- NA
       } else if (ratio > 1.25) {
         classifSummTable[which(classifSummTable[, 1] ==
-          contigName), 8] <- "Elevated"
+          contigName), 7] <- "Elevated"
       } else if (ratio < 0.75) {
         classifSummTable[which(classifSummTable[, 1] ==
-          contigName), 8] <- "Depressed"
+          contigName), 7] <- "Depressed"
       } else {
         classifSummTable[which(classifSummTable[, 1] ==
-          contigName), 8] <- "None"
+          contigName), 7] <- "None"
       }
     }
     return(classifSummTable)

@@ -46,7 +46,7 @@ patternMatcher <-
     bestMatchList <- list()
     filteredOutContigs <- rep(NA, length(contigNames))
     reason <- rep(NA, length(contigNames))
-    normMatchScore <- rep(NA, length(contigNames))
+    #normMatchScore <- rep(NA, length(contigNames))
     refs <- rep(NA, length(contigNames))
     A <- 1
     B <- 1
@@ -126,28 +126,21 @@ patternMatcher <-
       }
       bestMatch <- bestMatchSumm[[which(bestMatchScoreSumm ==
         min(bestMatchScoreSumm))[1]]]
-      bestMatchList[[A]] <- c(bestMatch, i, bestMatch[[1]] /
-        mean(viralSubset$coverage))
+      bestMatchList[[A]] <- c(bestMatch, i)
       names(bestMatchList)[A] <- i
-      names(bestMatchList[[A]])[1:9] <- c("match_score", "min_cov", "max_cov", "slope", "start_pos", "end_pos", "classif.", "contig", "norm_match_score")
-      normMatchScore[A] <-
-        bestMatch[[1]] / mean(viralSubset$coverage)
+      names(bestMatchList[[A]])[1:8] <- c("match_score", "min_cov", "max_cov", "slope", "start_pos", "end_pos", "classif.", "contig")
       refs[A] <- i
       A <- A + 1
     }
     filteredOutContigs <- filteredOutContigs[!is.na(filteredOutContigs)]
     reason <- reason[!is.na(reason)]
-    normMatchScore <- normMatchScore[!is.na(normMatchScore)]
     refs <- refs[!is.na(refs)]
-    normMatchScoreTable <- cbind.data.frame(refs, normMatchScore)
-    colnames(normMatchScoreTable) <- c("contigName", "normMatchScore")
     filteredOutSummaryTable <-
       cbind.data.frame(filteredOutContigs, reason)
     patternMatchSummaryList <-
       list(
         bestMatchList,
-        filteredOutSummaryTable,
-        normMatchScoreTable
+        filteredOutSummaryTable
       )
     return(patternMatchSummaryList)
   }

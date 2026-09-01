@@ -11,6 +11,7 @@ plotTrIdentResults(
   TrIdentResults,
   onlyPlot,
   logScale = FALSE,
+  allPlots = FALSE,
   saveFilesTo
 )
 }
@@ -42,6 +43,10 @@ start of each new contig.}
 
 \item{logScale}{TRUE or FALSE, display VLP-fraction read coverage in log10
 scale. Default is FALSE.}
+
+\item{allPlots}{TRUE or FALSE. Display read coverage patterns for all contigs 
+greater than the length cutoff (default 30 kbp). Default is FALSE. *Warning* This may 
+produce a lot of plots and a very large list object!}
 
 \item{saveFilesTo}{Optional, Provide a path to the directory you wish to save
 output to. A folder will be made within the provided directory to store

@@ -542,12 +542,6 @@ functions in TrIdent.
 4.  FilteredOutContigTable: A table containing contigs that were filtered out 
 and the reason why (low read coverage or too short).
 5.  windowSize: The `windowSize` used.
-6.  ResultHistogram: A histogram displaying the overall abundance and 
-quality of pattern-matches in addition to the composition of classifications. 
-The displayed pattern-match scores are normalized by dividing each score by its 
-associated contig length. The scores are normalized to visualize the overall 
-quality of pattern-matching for the entire dataset. Remember, smaller 
-pattern-match scores correspond to better pattern-matches. 
 
 Save the desired list-item to a new variable using its associated name.
 
@@ -563,10 +557,6 @@ kable(TrIdentSummaryTable) %>%
 
 * **contigName**: The contig reference name.
 * **classifications**: The classification given by TrIdent.
-* **normMatchScore**: The pattern-match score normalized by the size of the dataset
-(pattern-match scores from different contigs are not directly comparable to 
-one another as they are relative to the characteristics of the contig they
-were calculated for.).
 * **VLPWCRatio**: For HighCovNoPattern classifications only. The ratio between 
 the median VLP-fraction and WC read coverage values. The ratio is normalized by 
 the number of VLP-fraction and WC reads, respectively, if the read counts
@@ -628,6 +618,7 @@ plotTrIdentResults(
   TrIdentResults, 
   onlyPlot,
   logScale = FALSE,
+  allPlots=FALSE,
   saveFilesTo
 )
 ```
@@ -639,6 +630,11 @@ plotTrIdentResults(
 "Prophage-like", "Sloping", or "HighCovNoPattern".
 * `logScale`: TRUE or FALSE, display read coverage in log10 scale. Default is 
 FALSE.
+* `allPlots`: TRUE or FALSE. Display read coverage patterns for all contigs 
+greater than the length cutoff (default 30 kbp). Default is FALSE. *Warning* 
+This may produce a lot of plots and a very large list object! This is useful if
+you are interested in viewing coverage patterns of any contig regardless of 
+associated TrIdent classification.
 * `saveFilesTo`: Optional, Provide a path to the directory you wish to save 
 output to. A folder will be made within the provided directory to store 
 results.

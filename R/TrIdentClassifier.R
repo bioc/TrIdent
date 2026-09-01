@@ -47,9 +47,6 @@
 #'   and creation of pileup.
 #' @param WCReads Optional, the number of WC reads used for mapping and 
 #'   creation of pileup.
-#' @param SaveFilesTo Optional, Provide a path to the directory you wish to save
-#'   output to. A folder will be made within the provided directory to store
-#'   results.
 #' @param verbose TRUE or FALSE. Print progress messages to console. Default is TRUE.
 #' @param searchMethod Search method to use. Either "grid" for the original grid
 #'   search or "direct" for DIRECT global optimization.
@@ -58,6 +55,9 @@
 #' @param globalLocal Use global or local DIRECT search. Local search makes the 
 #' DIRECT algorithm more efficient for contigs without multiple potential read
 #' coverage patterns. Default is local. 
+#' @param SaveFilesTo Optional, Provide a path to the directory you wish to save
+#'   output to. A folder will be made within the provided directory to store
+#'   results.
 #' @importFrom utils capture.output
 #' @return Large list containing 5 objects
 #' @export
@@ -191,8 +191,6 @@ TrIdentClassifier <- function(VLPpileup,
     FilteredOutContigTable = classificationSummary[[2]],
     windowSize = windowSize
   )
-  plot <- ifelse(nrow(summaryList[[2]]) > 0, resultsHisto(summaryList), NULL)
-  summaryList <- c(summaryList, ResultHistogram = plot)
   endTime <- Sys.time()
   duration <- difftime(endTime, startTime)
   if (verbose) {
@@ -267,15 +265,6 @@ integrated into their bacterial host population"
       ),
       sep = ",",
       row.names = FALSE
-    )
-    ggsave(
-      filename = paste0(
-        SaveFilesTo,
-        "\\TrIdentOutput\\TrIdentResultHistogram.png"
-      ),
-      plot = plot,
-      width = 4,
-      height = 4
     )
     return(summaryList)
   } else {
