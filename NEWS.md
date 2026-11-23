@@ -1,7 +1,13 @@
+## Changes in 1.5.5
++ Make the minimum read coverage requirement for pattern-matching a TRUE/FALSE 
+parameter- `lowCovSensitivity`. TRUE uses a 5x coverage cutoff whereas FALSE 
+uses the original 10x coverage cutoff. Using a lower cutoff may pick up more 
+false positives but can also pick up low abundance/rare DNA packaging events.  
+
 ## Changes in 1.5.4
 
 + Reduce minimum read coverage requirements in VLP-fraction from 10x to 5x for 
-pattern-matching
+pattern-matching.
 
 ## Changes in 1.5.3
 

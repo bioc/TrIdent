@@ -22,6 +22,8 @@
 #'  pattern-matching on. Must be at least 20,000 bp. Default is 30,000 bp.
 #' @param minSlope The minimum slope value to test for sloping patterns
 #' @param minSlopeSize The minimum width of sloping patterns. 
+#' @param lowCovSensitivity TRUE or FALSE. If TRUE, 5x coverage is used as 
+#' low VLP-fraction coverage filter. If FALSE, 10x coverage is used. Default is FALSE.
 #' @param verbose TRUE or FALSE. Print progress messages to console. Default is TRUE.
 #' @param searchMethod Search method to use. Either "grid" for the original grid
 #'   search or "direct" for DIRECT global optimization.
@@ -38,10 +40,12 @@ patternMatcher <-
            minContigLength,
            minSlope,
            minSlopeSize,
+           lowCovSensitivity,
            verbose,
            searchMethod,
            DirectMaxEval,
            globalLocal) {
+    lowCovSensValue <- ifelse(lowCovSensitivity, 5, 10)
     contigNames <- unique(VLPpileup[, 1])
     bestMatchList <- list()
     filteredOutContigs <- rep(NA, length(contigNames))
@@ -71,7 +75,7 @@ patternMatcher <-
         C <- C + 1
         next
       } else if (viralSubset[(order(viralSubset[, 2],
-        decreasing = TRUE))[minBlockSize / 100], 2] <= 5) {
+        decreasing = TRUE))[minBlockSize / 100], 2] <= lowCovSensValue) {
         filteredOutContigs[C] <- i
         reason[C] <- "Low VLP-fraction read cov"
         C <- C + 1

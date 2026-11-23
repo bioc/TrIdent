@@ -40,6 +40,8 @@
 #'   is 0.001 (i.e minimum change of 10x read coverage over 100,000 bp).
 #' @param minSlopeSize The minimum width of sloping patterns.Default and 
 #' absolute minimum is 20,000 bp.
+#' @param lowCovSensitivity TRUE or FALSE. If TRUE, 5x coverage is used as 
+#' low VLP-fraction coverage filter. If FALSE, 10x coverage is used. Default is FALSE.
 #' @param minHCNPRatio The minimum VLP:WC ratio value used for HighCovNoPattern 
 #' classifications. Default is 2. (i.e the median VLP-fraction coverage must be
 #' at least 2x the median WC read coverage to be classified as HighCovNoPattern).
@@ -77,6 +79,7 @@ TrIdentClassifier <- function(VLPpileup,
                               minContigLength = 30000,
                               minSlope = 0.001,
                               minSlopeSize = 20000,
+                              lowCovSensitivity = FALSE,
                               minHCNPRatio = 2,
                               VLPReads,
                               WCReads,
@@ -140,6 +143,7 @@ TrIdentClassifier <- function(VLPpileup,
       minContigLength,
       minSlope,
       minSlopeSize,
+      lowCovSensitivity,
       verbose,
       searchMethod,
       DirectMaxEval,

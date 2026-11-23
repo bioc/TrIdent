@@ -13,6 +13,7 @@ TrIdentClassifier(
   minContigLength = 30000,
   minSlope = 0.001,
   minSlopeSize = 20000,
+  lowCovSensitivity = FALSE,
   minHCNPRatio = 2,
   VLPReads,
   WCReads,
@@ -61,6 +62,9 @@ is 0.001 (i.e minimum change of 10x read coverage over 100,000 bp).}
 
 \item{minSlopeSize}{The minimum width of sloping patterns.Default and 
 absolute minimum is 20,000 bp.}
+
+\item{lowCovSensitivity}{TRUE or FALSE. If TRUE, 5x coverage is used as 
+low VLP-fraction coverage filter. If FALSE, 10x coverage is used. Default is FALSE.}
 
 \item{minHCNPRatio}{The minimum VLP:WC ratio value used for HighCovNoPattern 
 classifications. Default is 2. (i.e the median VLP-fraction coverage must be

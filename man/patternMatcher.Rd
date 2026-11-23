@@ -13,6 +13,7 @@ patternMatcher(
   minContigLength,
   minSlope,
   minSlopeSize,
+  lowCovSensitivity,
   verbose,
   searchMethod,
   DirectMaxEval,
@@ -42,6 +43,9 @@ pattern-matching on. Must be at least 20,000 bp. Default is 30,000 bp.}
 \item{minSlope}{The minimum slope value to test for sloping patterns}
 
 \item{minSlopeSize}{The minimum width of sloping patterns.}
+
+\item{lowCovSensitivity}{TRUE or FALSE. If TRUE, 5x coverage is used as 
+low VLP-fraction coverage filter. If FALSE, 10x coverage is used. Default is FALSE.}
 
 \item{verbose}{TRUE or FALSE. Print progress messages to console. Default is TRUE.}
 
